@@ -77,11 +77,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+        {/* <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
             Demo Account: demo@example.com / password123
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

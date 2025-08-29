@@ -14,6 +14,13 @@
       "fullName": "Soumyajit Paria",
       "createdAt": "2025-08-28T19:24:36.955Z",
       "updatedAt": "2025-08-28T19:24:36.956Z"
+    },
+    {
+      "id": "1756470496033",
+      "email": "soumyajit@gmail.com",
+      "fullName": "Soumyajit Paria",
+      "createdAt": "2025-08-29T12:28:16.033Z",
+      "updatedAt": "2025-08-29T12:28:16.033Z"
     }
   ],
   "tasks": [
@@ -156,6 +163,16 @@
       "status": "done",
       "createdAt": "2025-08-28T20:56:50.870Z",
       "updatedAt": "2025-08-28T20:56:56.250Z"
+    },
+    {
+      "id": "2df9",
+      "title": "Eat",
+      "description": "Eat\n",
+      "priority": "medium",
+      "userId": "1756470496033",
+      "status": "todo",
+      "createdAt": "2025-08-29T12:28:31.320Z",
+      "updatedAt": "2025-08-29T12:28:33.743Z"
     }
   ]
 }

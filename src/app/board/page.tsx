@@ -6,10 +6,7 @@ import { Plus, Search, LogOut, Moon, Sun, AlertCircle } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
-import { TaskCard } from "@/components/TaskCard";
-import { CreateTaskModal } from "@/components/CreateTaskModal";
-import { Toast } from "@/components/Toast";
-import { UndoOverlay } from "@/components/UndoOverlay";
+import { TaskCard, CreateTaskModal, Toast, UndoOverlay } from "@/components";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import { filterTasks } from "@/lib/utils";
 
