@@ -1,1 +1,161 @@
-{}
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "demo@example.com",
+      "fullName": "Demo User",
+      "password": "password123",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "1756409076955",
+      "email": "soumyajitparia02@gmail.com",
+      "fullName": "Soumyajit Paria",
+      "createdAt": "2025-08-28T19:24:36.955Z",
+      "updatedAt": "2025-08-28T19:24:36.956Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "1",
+      "userId": "1",
+      "title": "Wire navigation component",
+      "description": "Create the initial wireframe for the top navigation bar including menu items and user profile dropdown",
+      "status": "done",
+      "priority": "medium",
+      "createdAt": "2025-01-01T10:00:00Z",
+      "updatedAt": "2025-08-28T20:57:41.760Z"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "title": "Set up design system",
+      "description": "Initialize the component library with base components, colors, typography, and spacing tokens",
+      "status": "in-progress",
+      "priority": "high",
+      "createdAt": "2025-01-02T09:30:00Z",
+      "updatedAt": "2025-01-03T14:20:00Z"
+    },
+    {
+      "id": "3",
+      "userId": "1",
+      "title": "Implement authentication flow",
+      "description": "Build login, signup, and password reset pages with form validation and error handling",
+      "status": "todo",
+      "priority": "high",
+      "createdAt": "2025-01-02T11:00:00Z",
+      "updatedAt": "2025-08-28T20:57:51.633Z"
+    },
+    {
+      "id": "4",
+      "userId": "1",
+      "title": "User testing session #1",
+      "description": "Conduct initial usability tests with 5 participants and gather feedback on navigation flow",
+      "status": "done",
+      "priority": "low",
+      "createdAt": "2025-01-03T08:00:00Z",
+      "updatedAt": "2025-01-03T17:30:00Z"
+    },
+    {
+      "id": "5",
+      "userId": "1",
+      "title": "API integration",
+      "description": "Connect frontend to REST API endpoints for user data and implement error handling",
+      "status": "in-progress",
+      "priority": "high",
+      "createdAt": "2025-01-04T10:15:00Z",
+      "updatedAt": "2025-08-28T20:57:33.516Z"
+    },
+    {
+      "id": "6",
+      "userId": "1",
+      "title": "Mobile responsive design",
+      "description": "Ensure all components work seamlessly on mobile devices with proper touch interactions",
+      "status": "todo",
+      "priority": "medium",
+      "createdAt": "2025-01-04T13:20:00Z",
+      "updatedAt": "2025-01-04T13:20:00Z"
+    },
+    {
+      "id": "7",
+      "userId": "1",
+      "title": "Performance optimization",
+      "description": "Implement code splitting, lazy loading, and optimize bundle size for faster load times",
+      "status": "done",
+      "priority": "low",
+      "createdAt": "2025-01-05T09:00:00Z",
+      "updatedAt": "2025-08-28T20:57:35.197Z"
+    },
+    {
+      "id": "8",
+      "userId": "1",
+      "title": "Write unit tests",
+      "description": "Add comprehensive test coverage for critical components and utility functions",
+      "status": "todo",
+      "priority": "medium",
+      "createdAt": "2025-01-05T11:30:00Z",
+      "updatedAt": "2025-01-05T11:30:00Z"
+    },
+    {
+      "id": "9",
+      "userId": "1",
+      "title": "Documentation",
+      "description": "Create developer documentation including API docs, component library, and setup guide",
+      "status": "in-progress",
+      "priority": "low",
+      "createdAt": "2025-01-01T14:00:00Z",
+      "updatedAt": "2025-08-28T20:57:30.083Z"
+    },
+    {
+      "id": "10",
+      "userId": "1",
+      "title": "Security audit",
+      "description": "Review application for security vulnerabilities and implement necessary patches",
+      "status": "in-progress",
+      "priority": "high",
+      "createdAt": "2025-01-06T08:45:00Z",
+      "updatedAt": "2025-01-06T15:30:00Z"
+    },
+    {
+      "id": "1355",
+      "userId": "1",
+      "title": "Eat",
+      "description": "Eat",
+      "priority": "high",
+      "status": "todo",
+      "createdAt": "2025-08-28T19:06:38.930Z",
+      "updatedAt": "2025-08-28T19:06:38.930Z"
+    },
+    {
+      "id": "e7c9",
+      "userId": "1",
+      "title": "dcdzbnm",
+      "description": "bdfnmb",
+      "priority": "medium",
+      "status": "done",
+      "createdAt": "2025-08-28T19:11:22.500Z",
+      "updatedAt": "2025-08-28T20:57:59.342Z"
+    },
+    {
+      "id": "1ede",
+      "title": "Baal",
+      "description": "Bssal",
+      "priority": "high",
+      "userId": "1756409076955",
+      "status": "todo",
+      "createdAt": "2025-08-28T19:24:51.370Z",
+      "updatedAt": "2025-08-29T12:21:44.561Z"
+    },
+    {
+      "id": "f158",
+      "title": "lol",
+      "description": "lolll",
+      "priority": "low",
+      "userId": "1756409076955",
+      "status": "done",
+      "createdAt": "2025-08-28T20:56:50.870Z",
+      "updatedAt": "2025-08-28T20:56:56.250Z"
+    }
+  ]
+}
