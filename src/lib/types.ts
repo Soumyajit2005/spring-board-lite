@@ -1,0 +1,230 @@
+// Task related types
+export interface Task {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TaskStatus = "todo" | "in-progress" | "done";
+export type TaskPriority = "low" | "medium" | "high";
+
+export interface CreateTaskInput {
+  title: string;
+  description: string;
+  priority: TaskPriority;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+}
+
+// Optimistic update types
+export interface OptimisticUpdate<T = Task> {
+  id: string;
+  type: "create" | "update" | "delete";
+  previousState: T | null;
+  newState: T | null;
+  timestamp: number;
+  rollbackFn?: () => void;
+}
+
+export interface UndoableAction {
+  taskId: string;
+  previousState: Task;
+  newState: Task;
+  timestamp: number;
+  expiresAt: number;
+}
+
+// API types
+export interface ApiResponse<T> {
+  data?: T;
+  error?: ApiError;
+  success: boolean;
+}
+
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+// Auth types
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+// UI State types
+export interface ToastMessage {
+  id: string;
+  message: string;
+  type: "success" | "error" | "warning" | "info" | "undo";
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
+export interface DragState {
+  isDragging: boolean;
+  draggedTask: Task | null;
+  dropTarget: TaskStatus | null;
+}
+
+export interface FilterState {
+  searchQuery: string;
+  priorityFilter: TaskPriority | "all";
+  statusFilter: TaskStatus | "all";
+}
+
+// Board types
+export interface Column {
+  id: TaskStatus;
+  title: string;
+  tasks: Task[];
+  color?: string;
+  icon?: React.ReactNode;
+}
+
+export interface BoardState {
+  tasks: Task[];
+  columns: Column[];
+  loading: boolean;
+  error: ApiError | null;
+  optimisticUpdates: OptimisticUpdate[];
+}
+
+// Offline queue types (for variant Q-Z)
+export interface QueuedAction {
+  id: string;
+  type: "create" | "update" | "delete";
+  payload: any;
+  timestamp: number;
+  retryCount: number;
+  maxRetries: number;
+}
+
+export interface OfflineState {
+  isOnline: boolean;
+  queue: QueuedAction[];
+  syncing: boolean;
+  lastSyncTime: number | null;
+}
+
+// Theme types
+export type Theme = "light" | "dark" | "system";
+
+export interface ThemeState {
+  current: Theme;
+  resolved: "light" | "dark";
+}
+
+// Performance metrics
+export interface PerformanceMetrics {
+  dragStartTime?: number;
+  dragEndTime?: number;
+  apiCallStartTime?: number;
+  apiCallEndTime?: number;
+  renderStartTime?: number;
+  renderEndTime?: number;
+}
+
+// Validation types
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}
+
+// Hook return types
+export interface UseTasksReturn {
+  tasks: Task[];
+  loading: boolean;
+  error: ApiError | null;
+  createTask: (input: CreateTaskInput) => Promise<void>;
+  updateTask: (id: string, input: UpdateTaskInput) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  moveTask: (id: string, status: TaskStatus) => Promise<void>;
+  undoLastAction: () => void;
+  canUndo: boolean;
+}
+
+export interface UseAuthReturn {
+  isAuthenticated: boolean;
+  user: User | null;
+  loading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => void;
+  refreshToken: () => Promise<void>;
+}
+
+export interface UseOptimisticReturn<T> {
+  data: T;
+  setOptimistic: (newData: T) => void;
+  rollback: () => void;
+  commit: () => void;
+  isPending: boolean;
+}
+
+// Configuration types
+export interface AppConfig {
+  apiUrl: string;
+  apiTimeout: number;
+  failureRate: number;
+  variant: "a-g" | "h-p" | "q-z";
+  features: {
+    enableOfflineMode: boolean;
+    enableKeyboardShortcuts: boolean;
+    enableUndoRedo: boolean;
+    enableDarkMode: boolean;
+  };
+}
