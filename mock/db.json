@@ -21,6 +21,13 @@
       "fullName": "Soumyajit Paria",
       "createdAt": "2025-08-29T12:28:16.033Z",
       "updatedAt": "2025-08-29T12:28:16.033Z"
+    },
+    {
+      "id": "1756471989106",
+      "email": "soumyajitpari@gmail.com",
+      "fullName": "soumyait",
+      "createdAt": "2025-08-29T12:53:09.106Z",
+      "updatedAt": "2025-08-29T12:53:09.106Z"
     }
   ],
   "tasks": [
@@ -143,16 +150,6 @@
       "status": "done",
       "createdAt": "2025-08-28T19:11:22.500Z",
       "updatedAt": "2025-08-28T20:57:59.342Z"
-    },
-    {
-      "id": "1ede",
-      "title": "Baal",
-      "description": "Bssal",
-      "priority": "high",
-      "userId": "1756409076955",
-      "status": "todo",
-      "createdAt": "2025-08-28T19:24:51.370Z",
-      "updatedAt": "2025-08-29T12:21:44.561Z"
     },
     {
       "id": "f158",
