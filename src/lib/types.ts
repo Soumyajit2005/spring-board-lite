@@ -196,6 +196,7 @@ export interface UseTasksReturn {
   moveTask: (id: string, status: TaskStatus) => Promise<void>;
   undoLastAction: () => void;
   canUndo: boolean;
+  optimisticUpdates: OptimisticUpdate[];
 }
 
 export interface UseAuthReturn {
