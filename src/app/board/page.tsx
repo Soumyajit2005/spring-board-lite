@@ -2,20 +2,37 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, LogOut, Moon, Sun, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Search,
+  LogOut,
+  Moon,
+  Sun,
+  AlertCircle,
+  Filter,
+  Users,
+  TrendingUp,
+} from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
 import { TaskCard, CreateTaskModal, Toast, UndoOverlay } from "@/components";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
-import { filterTasks } from "@/lib/utils";
+import { filterTasks, calculateTaskStats } from "@/lib/utils";
 
 export default function BoardPage() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const { tasks, loading, createTask, moveTask, undoLastAction, canUndo } =
-    useTasks();
+  const {
+    tasks,
+    loading,
+    createTask,
+    moveTask,
+    deleteTask,
+    undoLastAction,
+    canUndo,
+  } = useTasks();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
@@ -89,21 +106,38 @@ export default function BoardPage() {
     priority: priorityFilter,
   });
 
+  // Calculate stats
+  const stats = calculateTaskStats(filteredTasks);
+
   const columns = [
     {
       id: "todo" as const,
-      title: "Todo",
+      title: "📝 Todo",
+      description: "Tasks to be started",
       tasks: filteredTasks.filter((t) => t.status === "todo"),
+      color: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700",
+      borderColor: "border-gray-200 dark:border-gray-600",
+      textColor: "text-gray-700 dark:text-gray-300",
     },
     {
       id: "in-progress" as const,
-      title: "In Progress",
+      title: "🚀 In Progress",
+      description: "Work in progress",
       tasks: filteredTasks.filter((t) => t.status === "in-progress"),
+      color:
+        "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30",
+      borderColor: "border-blue-200 dark:border-blue-700",
+      textColor: "text-blue-700 dark:text-blue-300",
     },
     {
       id: "done" as const,
-      title: "Done",
+      title: "✅ Done",
+      description: "Completed tasks",
       tasks: filteredTasks.filter((t) => t.status === "done"),
+      color:
+        "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30",
+      borderColor: "border-green-200 dark:border-green-700",
+      textColor: "text-green-700 dark:text-green-300",
     },
   ];
 
@@ -186,99 +220,211 @@ export default function BoardPage() {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      await deleteTask(taskId);
+      setToast({
+        message: `Task "${task?.title}" deleted successfully`,
+        type: "success",
+      });
+    } catch (error) {
+      setToast({ message: "Failed to delete task", type: "error" });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-        <div className="animate-pulse">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-4">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading your tasks...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Sprint Board
-          </h1>
-          <div className="flex items-center gap-4">
-            {user && (
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Welcome, <span className="font-medium">{user.fullName}</span>
-              </div>
-            )}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Sprint Board
+              </h1>
+              {user && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Users className="w-4 h-4" />
+                  <span>
+                    Welcome,{" "}
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {user.fullName}
+                    </span>
+                  </span>
+                </div>
               )}
-            </button>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Quick Stats */}
+              <div className="hidden md:flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>{stats.completionRate}% Complete</span>
+                </div>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {isDark ? (
+                  <Sun className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <Moon className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Controls */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex gap-4 mb-6">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-800"
+              className="w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
             />
           </div>
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value as any)}
-            className="px-4 py-2 border rounded-lg dark:bg-gray-800"
-          >
-            <option value="all">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Task
-          </button>
+          <div className="flex gap-3">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as any)}
+                className="pl-10 pr-8 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all appearance-none cursor-pointer"
+              >
+                <option value="all">All Priorities</option>
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
+            </div>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl font-medium shadow-lg shadow-blue-200 dark:shadow-blue-900/30 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Task</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Tasks
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.total}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <span className="text-xl">📋</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  In Progress
+                </p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.inProgress}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <span className="text-xl">🚀</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Completed
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.done}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <span className="text-xl">✅</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Success Rate
+                </p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {stats.completionRate}%
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                <span className="text-xl">📊</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Drag and Drop Instructions */}
         {tasks.length > 0 && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1">
-                  🖱️ <strong>Drag</strong> tasks between columns
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded-xl p-5 mb-8 backdrop-blur-sm">
+            <div className="flex items-center gap-4 text-blue-800 dark:text-blue-200">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <span className="text-xl">💡</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-6 text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  <strong>Drag</strong> tasks between columns
                 </span>
-                <span className="flex items-center gap-1">
-                  ⌨️ Use{" "}
-                  <kbd className="px-2 py-1 bg-blue-100 dark:bg-blue-800 rounded text-xs">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                  Use{" "}
+                  <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs border border-blue-200 dark:border-blue-700">
                     [ ]
                   </kbd>{" "}
                   keys to move focused tasks
                 </span>
-                <span className="flex items-center gap-1">
-                  🔄 <strong>Undo</strong> available after moves
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  <strong>Undo</strong> available after moves
                 </span>
               </div>
             </div>
@@ -286,7 +432,7 @@ export default function BoardPage() {
         )}
 
         {/* Board */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {columns.map((column) => (
             <div
               key={column.id}
@@ -295,46 +441,81 @@ export default function BoardPage() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, column.id)}
               className={`
-                bg-gray-100 dark:bg-gray-800 rounded-lg p-4 min-h-[400px] transition-all duration-200
-                ${
+                relative rounded-2xl p-6 min-h-[500px] transition-all duration-300 backdrop-blur-sm
+                bg-gradient-to-br ${column.color}
+                border-2 ${
                   dropTarget === column.id
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600 border-dashed"
-                    : "border-2 border-transparent"
+                    ? `${column.borderColor} border-dashed shadow-xl shadow-blue-200/50 dark:shadow-blue-900/50 scale-105`
+                    : `${column.borderColor} border-solid shadow-lg`
                 }
                 ${
                   draggedTask && draggedTask.status === column.id
-                    ? "opacity-50"
+                    ? "opacity-50 scale-95"
                     : ""
                 }
               `}
             >
-              <h2 className="font-semibold mb-4 flex items-center justify-between">
-                <span>
-                  {column.title} ({column.tasks.length})
-                </span>
-                {dropTarget === column.id && draggedTask && (
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                    Drop here
-                  </span>
-                )}
-              </h2>
-              <div className="space-y-3">
+              {/* Column Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className={`text-xl font-bold ${column.textColor} mb-1`}>
+                    {column.title}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    {column.description}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${column.textColor} bg-white/60 dark:bg-gray-800/60`}
+                    >
+                      {column.tasks.length}{" "}
+                      {column.tasks.length === 1 ? "task" : "tasks"}
+                    </span>
+                    {dropTarget === column.id && draggedTask && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 animate-pulse">
+                        Drop here
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tasks */}
+              <div className="space-y-4">
                 {column.tasks.length === 0 ? (
                   <div
                     className={`
-                    text-center py-8 rounded-lg transition-colors duration-200
-                    ${
-                      dropTarget === column.id
-                        ? "text-blue-500 bg-blue-50/50 dark:bg-blue-900/10"
-                        : "text-gray-400"
-                    }
-                  `}
+                      text-center py-12 rounded-xl transition-all duration-300
+                      ${
+                        dropTarget === column.id
+                          ? "bg-blue-100/60 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600 border-dashed"
+                          : "bg-white/30 dark:bg-gray-800/30 border-2 border-gray-200/50 dark:border-gray-700/50 border-dashed"
+                      }
+                    `}
                   >
-                    <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                    <p>
+                    <div className="mb-4">
+                      {dropTarget === column.id ? (
+                        <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
+                          <span className="text-2xl">📥</span>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
+                          <AlertCircle className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <p
+                      className={`text-sm font-medium ${
+                        dropTarget === column.id
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
                       {dropTarget === column.id
-                        ? "Drop task here"
-                        : "No tasks here"}
+                        ? "Drop your task here"
+                        : `No ${column.title
+                            .split(" ")[1]
+                            ?.toLowerCase()} tasks yet`}
                     </p>
                   </div>
                 ) : (
@@ -345,11 +526,11 @@ export default function BoardPage() {
                       onDragStart={(e) => handleDragStart(e, task)}
                       onDragEnd={handleDragEnd}
                       className={`
-                        transition-all duration-200 transform
+                        transition-all duration-300 transform
                         ${
                           draggedTask?.id === task.id
-                            ? "opacity-50 scale-95 rotate-2"
-                            : "hover:scale-[1.02]"
+                            ? "opacity-50 scale-95 rotate-1 z-50"
+                            : "hover:scale-[1.02] hover:-translate-y-1"
                         }
                       `}
                     >
@@ -358,6 +539,7 @@ export default function BoardPage() {
                         isDragging={draggedTask?.id === task.id}
                         onFocus={() => setFocusedTaskId(task.id)}
                         isFocused={focusedTaskId === task.id}
+                        onDelete={handleDeleteTask}
                       />
                     </div>
                   ))
