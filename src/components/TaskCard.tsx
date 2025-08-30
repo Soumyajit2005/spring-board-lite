@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Task } from "@/lib/types";
 import { priorityConfig } from "@/lib/utils";
-import { GripVertical, Trash2, Calendar, Clock } from "lucide-react";
+import { GripVertical, Trash2, Calendar, Clock, Eye, Edit3 } from "lucide-react";
 import { AITaskEnhancement } from "./AIComponents";
 
 interface TaskCardProps {
@@ -12,6 +12,8 @@ interface TaskCardProps {
   onFocus?: () => void;
   isFocused?: boolean;
   onDelete?: (taskId: string) => void;
+  onView?: (task: Task) => void;
+  onEdit?: (task: Task) => void;
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
@@ -24,6 +26,8 @@ export function TaskCard({
   onFocus,
   isFocused,
   onDelete,
+  onView,
+  onEdit,
   onTouchStart,
   onTouchMove,
   onTouchEnd,
@@ -101,6 +105,26 @@ export function TaskCard({
           {task.title}
         </h3>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.(task);
+            }}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-all duration-200 flex-shrink-0"
+            title="View task details"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(task);
+            }}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-green-500 dark:text-gray-500 dark:hover:text-green-400 transition-all duration-200 flex-shrink-0"
+            title="Edit task"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleDeleteClick}
             className={`

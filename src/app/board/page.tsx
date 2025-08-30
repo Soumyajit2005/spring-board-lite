@@ -13,6 +13,8 @@ import {
   Toast,
   UndoOverlay,
   AIInsightsPanel,
+  ViewTaskModal,
+  EditTaskModal,
 } from "@/components";
 import { AISettingsPanel } from "@/components/AISettings";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
@@ -26,6 +28,7 @@ export default function BoardPage() {
     tasks,
     loading,
     createTask,
+    updateTask,
     moveTask,
     deleteTask,
     undoLastAction,
@@ -54,6 +57,16 @@ export default function BoardPage() {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
+  
+  // Modal states
+  const [viewTaskModal, setViewTaskModal] = useState<{
+    isOpen: boolean;
+    task: Task | null;
+  }>({ isOpen: false, task: null });
+  const [editTaskModal, setEditTaskModal] = useState<{
+    isOpen: boolean;
+    task: Task | null;
+  }>({ isOpen: false, task: null });
 
   // Auth guard
   useEffect(() => {
@@ -262,6 +275,38 @@ export default function BoardPage() {
       });
     } catch (error) {
       setToast({ message: "Failed to delete task", type: "error" });
+    }
+  };
+
+  // Modal handlers
+  const handleViewTask = (task: Task) => {
+    setViewTaskModal({ isOpen: true, task });
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditTaskModal({ isOpen: true, task });
+  };
+
+  const handleCloseViewModal = () => {
+    setViewTaskModal({ isOpen: false, task: null });
+  };
+
+  const handleCloseEditModal = () => {
+    setEditTaskModal({ isOpen: false, task: null });
+  };
+
+  const handleSaveEditTask = async (updatedFields: Partial<Task>) => {
+    if (!editTaskModal.task) return;
+
+    try {
+      await updateTask(editTaskModal.task.id, updatedFields);
+      setToast({
+        message: "Task updated successfully",
+        type: "success",
+      });
+      setEditTaskModal({ isOpen: false, task: null });
+    } catch (error) {
+      setToast({ message: "Failed to update task", type: "error" });
     }
   };
 
@@ -600,6 +645,8 @@ export default function BoardPage() {
                         onFocus={() => setFocusedTaskId(task.id)}
                         isFocused={focusedTaskId === task.id}
                         onDelete={handleDeleteTask}
+                        onView={handleViewTask}
+                        onEdit={handleEditTask}
                       />
                     </div>
                   ))
@@ -639,6 +686,25 @@ export default function BoardPage() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* View Task Modal */}
+      {viewTaskModal.task && (
+        <ViewTaskModal
+          task={viewTaskModal.task}
+          isOpen={viewTaskModal.isOpen}
+          onClose={handleCloseViewModal}
+        />
+      )}
+
+      {/* Edit Task Modal */}
+      {editTaskModal.task && (
+        <EditTaskModal
+          task={editTaskModal.task}
+          isOpen={editTaskModal.isOpen}
+          onClose={handleCloseEditModal}
+          onSave={handleSaveEditTask}
         />
       )}
     </div>
