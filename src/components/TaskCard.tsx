@@ -3,7 +3,14 @@
 import React, { useState } from "react";
 import { Task } from "@/lib/types";
 import { priorityConfig } from "@/lib/utils";
-import { GripVertical, Trash2, Calendar, Clock, Eye, Edit3 } from "lucide-react";
+import {
+  GripVertical,
+  Trash2,
+  Calendar,
+  Clock,
+  Eye,
+  Edit3,
+} from "lucide-react";
 import { AITaskEnhancement } from "./AIComponents";
 
 interface TaskCardProps {

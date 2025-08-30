@@ -167,7 +167,12 @@ interface EditTaskModalProps {
   onSave: (updatedTask: Partial<Task>) => void;
 }
 
-export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalProps) {
+export function EditTaskModal({
+  task,
+  isOpen,
+  onClose,
+  onSave,
+}: EditTaskModalProps) {
   const [formData, setFormData] = useState({
     title: task.title,
     description: task.description || "",
@@ -178,13 +183,13 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -201,9 +206,9 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
   };
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -268,7 +273,9 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
                   rows={4}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors resize-none"
                   placeholder="Enter task description (optional)"
@@ -282,7 +289,12 @@ export function EditTaskModal({ task, isOpen, onClose, onSave }: EditTaskModalPr
                 </label>
                 <select
                   value={formData.priority}
-                  onChange={(e) => handleInputChange("priority", e.target.value as TaskPriority)}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "priority",
+                      e.target.value as TaskPriority
+                    )
+                  }
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
                 >
                   <option value="low">Low Priority</option>

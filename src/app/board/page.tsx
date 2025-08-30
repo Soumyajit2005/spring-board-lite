@@ -57,7 +57,7 @@ export default function BoardPage() {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
-  
+
   // Modal states
   const [viewTaskModal, setViewTaskModal] = useState<{
     isOpen: boolean;
