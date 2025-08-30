@@ -8,6 +8,13 @@ export interface Task {
   priority: TaskPriority;
   createdAt: string;
   updatedAt: string;
+  // AI Enhancement fields (optional - won't break existing functionality)
+  aiData?: {
+    category?: string;
+    estimatedHours?: number;
+    enhancedDescription?: string;
+    confidence?: number;
+  };
 }
 
 export type TaskStatus = "todo" | "in-progress" | "done";
@@ -227,5 +234,44 @@ export interface AppConfig {
     enableKeyboardShortcuts: boolean;
     enableUndoRedo: boolean;
     enableDarkMode: boolean;
+    enableAIFeatures: boolean;
+  };
+}
+
+// AI Feature Types
+export interface AIInsight {
+  id: string;
+  type:
+    | "categorization"
+    | "time_estimation"
+    | "suggestion"
+    | "productivity"
+    | "completion_probability";
+  message: string;
+  confidence: number;
+  data?: any;
+  actions?: string[];
+  timestamp: number;
+}
+
+export interface AITaskEnhancement {
+  taskId: string;
+  category?: string;
+  estimatedHours?: number;
+  enhancedDescription?: string;
+  confidence: number;
+  timestamp: number;
+}
+
+export interface ProductivityMetrics {
+  completedTasks: number;
+  averageCompletionTime: number;
+  burnoutRisk: "low" | "medium" | "high";
+  productivityScore: number;
+  weeklyReport: {
+    tasksCompleted: number;
+    averageTaskTime: number;
+    peakProductivityHours: string[];
+    recommendations: string[];
   };
 }

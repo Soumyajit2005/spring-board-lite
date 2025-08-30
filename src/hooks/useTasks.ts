@@ -83,9 +83,9 @@ export function useTasks(): UseTasksReturn {
     const result = await api.task.createTask(input);
 
     if (result.success && result.data) {
-      // Replace temp task with real task
-      setTasks((prev) =>
-        prev.map((task) => (task.id === tempTask.id ? result.data! : task))
+      // Update optimistic task with server response
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task.id === tempTask.id ? result.data! : task))
       );
 
       // Remove optimistic update

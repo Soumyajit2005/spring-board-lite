@@ -28,6 +28,13 @@
       "fullName": "soumyait",
       "createdAt": "2025-08-29T12:53:09.106Z",
       "updatedAt": "2025-08-29T12:53:09.106Z"
+    },
+    {
+      "id": "1756535908807",
+      "email": "soumyajitparia2005@gmail.com",
+      "fullName": "Soumyajit Paria",
+      "createdAt": "2025-08-30T06:38:28.807Z",
+      "updatedAt": "2025-08-30T06:38:28.807Z"
     }
   ],
   "tasks": [
@@ -56,30 +63,30 @@
       "userId": "1",
       "title": "Implement authentication flow",
       "description": "Build login, signup, and password reset pages with form validation and error handling",
-      "status": "todo",
+      "status": "in-progress",
       "priority": "high",
       "createdAt": "2025-01-02T11:00:00Z",
-      "updatedAt": "2025-08-28T20:57:51.633Z"
+      "updatedAt": "2025-08-30T08:10:15.108Z"
     },
     {
       "id": "4",
       "userId": "1",
       "title": "User testing session #1",
       "description": "Conduct initial usability tests with 5 participants and gather feedback on navigation flow",
-      "status": "done",
+      "status": "in-progress",
       "priority": "low",
       "createdAt": "2025-01-03T08:00:00Z",
-      "updatedAt": "2025-01-03T17:30:00Z"
+      "updatedAt": "2025-08-30T06:45:04.109Z"
     },
     {
       "id": "5",
       "userId": "1",
       "title": "API integration",
       "description": "Connect frontend to REST API endpoints for user data and implement error handling",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "createdAt": "2025-01-04T10:15:00Z",
-      "updatedAt": "2025-08-28T20:57:33.516Z"
+      "updatedAt": "2025-08-30T07:24:02.071Z"
     },
     {
       "id": "6",
@@ -106,30 +113,30 @@
       "userId": "1",
       "title": "Write unit tests",
       "description": "Add comprehensive test coverage for critical components and utility functions",
-      "status": "todo",
+      "status": "in-progress",
       "priority": "medium",
       "createdAt": "2025-01-05T11:30:00Z",
-      "updatedAt": "2025-01-05T11:30:00Z"
+      "updatedAt": "2025-08-30T08:10:49.462Z"
     },
     {
       "id": "9",
       "userId": "1",
       "title": "Documentation",
       "description": "Create developer documentation including API docs, component library, and setup guide",
-      "status": "in-progress",
+      "status": "done",
       "priority": "low",
       "createdAt": "2025-01-01T14:00:00Z",
-      "updatedAt": "2025-08-28T20:57:30.083Z"
+      "updatedAt": "2025-08-30T08:08:49.268Z"
     },
     {
       "id": "10",
       "userId": "1",
       "title": "Security audit",
       "description": "Review application for security vulnerabilities and implement necessary patches",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "createdAt": "2025-01-06T08:45:00Z",
-      "updatedAt": "2025-01-06T15:30:00Z"
+      "updatedAt": "2025-08-30T08:08:43.973Z"
     },
     {
       "id": "1355",
@@ -170,6 +177,16 @@
       "status": "todo",
       "createdAt": "2025-08-29T12:28:31.320Z",
       "updatedAt": "2025-08-29T12:28:33.743Z"
+    },
+    {
+      "id": "7d16",
+      "title": "Do projects",
+      "description": "Description of projects",
+      "priority": "high",
+      "userId": "1756535908807",
+      "status": "done",
+      "createdAt": "2025-08-30T06:38:55.662Z",
+      "updatedAt": "2025-08-30T06:39:08.836Z"
     }
   ]
 }

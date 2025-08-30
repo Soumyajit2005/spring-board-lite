@@ -136,7 +136,7 @@ export function CreateTaskModal({
   return (
     <div
       className={`
-        fixed inset-0 z-50 flex items-center justify-center p-4
+        fixed inset-0 z-40 flex items-center justify-center p-4
         bg-black/20 backdrop-blur-sm
         transition-all duration-300
         ${isAnimating && isOpen ? "opacity-100" : "opacity-0"}

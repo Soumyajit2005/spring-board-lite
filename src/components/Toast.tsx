@@ -71,7 +71,7 @@ export function Toast({
   const Icon = icons[type];
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed top-4 right-4 z-40">
       <div
         className={`
           flex items-center gap-3 p-4 rounded-lg border shadow-lg min-w-[320px] max-w-[480px]

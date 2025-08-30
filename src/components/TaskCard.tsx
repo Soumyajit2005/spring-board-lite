@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Task } from "@/lib/types";
 import { priorityConfig } from "@/lib/utils";
 import { GripVertical, Trash2, Calendar, Clock } from "lucide-react";
+import { AITaskEnhancement } from "./AIComponents";
 
 interface TaskCardProps {
   task: Task;
@@ -14,6 +15,7 @@ interface TaskCardProps {
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
+  showAIFeatures?: boolean;
 }
 
 export function TaskCard({
@@ -25,6 +27,7 @@ export function TaskCard({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
+  showAIFeatures = true,
 }: TaskCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const priority = priorityConfig[task.priority];
@@ -174,6 +177,17 @@ export function TaskCard({
           )}
         </div>
       </div>
+
+      {/* AI Enhancement Section - Only shown when focused */}
+      {showAIFeatures && isFocused && (
+        <AITaskEnhancement
+          task={task}
+          onEnhance={(enhancement) => {
+            // Handle AI enhancement results
+            console.log("AI Enhancement:", enhancement);
+          }}
+        />
+      )}
 
       {/* Delete confirmation overlay */}
       {showDeleteConfirm && (

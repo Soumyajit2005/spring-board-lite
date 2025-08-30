@@ -205,7 +205,7 @@ export const taskApi = {
     id: string,
     newStatus: Task["status"]
   ): Promise<ApiResponse<Task>> {
-    return taskApi.updateTask(id, { status: newStatus }); // Fixed: use taskApi instead of this
+    return taskApi.updateTask(id, { status: newStatus });
   },
 
   // Batch update tasks
@@ -213,8 +213,8 @@ export const taskApi = {
     updates: Array<{ id: string; changes: UpdateTaskInput }>
   ): Promise<ApiResponse<Task[]>> {
     try {
-      const promises = updates.map(
-        ({ id, changes }) => taskApi.updateTask(id, changes) // Fixed: use taskApi instead of this
+      const promises = updates.map(({ id, changes }) =>
+        taskApi.updateTask(id, changes)
       );
 
       const results = await Promise.all(promises);

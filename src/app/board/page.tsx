@@ -2,27 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Search,
-  LogOut,
-  Moon,
-  Sun,
-  AlertCircle,
-  Filter,
-  Users,
-  TrendingUp,
-} from "lucide-react";
+import { Plus, Search, LogOut, Moon, Sun, AlertCircle } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
-import { TaskCard, CreateTaskModal, Toast, UndoOverlay } from "@/components";
+import { useAI } from "@/hooks/useAI";
+import {
+  TaskCard,
+  CreateTaskModal,
+  Toast,
+  UndoOverlay,
+  AIInsightsPanel,
+} from "@/components";
+import { AISettingsPanel } from "@/components/AISettings";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
-import { filterTasks, calculateTaskStats } from "@/lib/utils";
+import { filterTasks } from "@/lib/utils";
 
 export default function BoardPage() {
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, loading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const {
     tasks,
@@ -33,6 +31,14 @@ export default function BoardPage() {
     undoLastAction,
     canUndo,
   } = useTasks();
+  const {
+    insights,
+    analyzeProductivity,
+    dismissInsight,
+    regenerateInsights,
+    isProcessing,
+    isAIAvailable,
+  } = useAI();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
@@ -51,10 +57,23 @@ export default function BoardPage() {
 
   // Auth guard
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading, router]);
+
+  // AI Productivity Analysis - Run when tasks change
+  useEffect(() => {
+    if (tasks.length > 0 && isAIAvailable) {
+      // Debounce the analysis to avoid too many API calls
+      const timeoutId = setTimeout(() => {
+        analyzeProductivity(tasks);
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+    return () => {}; // Always return a cleanup function
+  }, [tasks, isAIAvailable, analyzeProductivity]);
 
   // Keyboard navigation with enhanced drag and drop support
   useEffect(() => {
@@ -106,8 +125,21 @@ export default function BoardPage() {
     priority: priorityFilter,
   });
 
-  // Calculate stats
-  const stats = calculateTaskStats(filteredTasks);
+  // Calculate stats manually
+  const stats = {
+    total: filteredTasks.length,
+    todo: filteredTasks.filter((t) => t.status === "todo").length,
+    inProgress: filteredTasks.filter((t) => t.status === "in-progress").length,
+    done: filteredTasks.filter((t) => t.status === "done").length,
+    completionRate:
+      filteredTasks.length > 0
+        ? Math.round(
+            (filteredTasks.filter((t) => t.status === "done").length /
+              filteredTasks.length) *
+              100
+          )
+        : 0,
+  };
 
   const columns = [
     {
@@ -248,6 +280,18 @@ export default function BoardPage() {
     );
   }
 
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -260,7 +304,7 @@ export default function BoardPage() {
               </h1>
               {user && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Users className="w-4 h-4" />
+                  <span>👤</span>
                   <span>
                     Welcome,{" "}
                     <span className="font-medium text-gray-900 dark:text-white">
@@ -271,13 +315,18 @@ export default function BoardPage() {
               )}
             </div>
             <div className="flex items-center gap-3">
-              {/* Quick Stats */}
+              {/* Quick Stats - Simplified without missing functions */}
               <div className="hidden md:flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>{stats.completionRate}% Complete</span>
+                  <span>
+                    {tasks.filter((t) => t.status === "done").length} Complete
+                  </span>
                 </div>
               </div>
+
+              {/* AI Settings Button */}
+              {isAIAvailable && <AISettingsPanel />}
+
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
@@ -316,11 +365,10 @@ export default function BoardPage() {
           </div>
           <div className="flex gap-3">
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value as any)}
-                className="pl-10 pr-8 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all appearance-none cursor-pointer"
+                className="px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all appearance-none cursor-pointer"
               >
                 <option value="all">All Priorities</option>
                 <option value="low">Low Priority</option>
@@ -431,6 +479,18 @@ export default function BoardPage() {
           </div>
         )}
 
+        {/* AI Insights Dropdown */}
+        {isAIAvailable && insights.length > 0 && (
+          <AIInsightsPanel
+            insights={insights}
+            onDismiss={(insightIndex) => dismissInsight(insightIndex)}
+            onRegenerate={async () => {
+              await regenerateInsights(tasks);
+            }}
+            isRegenerating={isProcessing}
+          />
+        )}
+
         {/* Board */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {columns.map((column) => (
@@ -529,7 +589,7 @@ export default function BoardPage() {
                         transition-all duration-300 transform
                         ${
                           draggedTask?.id === task.id
-                            ? "opacity-50 scale-95 rotate-1 z-50"
+                            ? "opacity-50 scale-95 rotate-1 z-30"
                             : "hover:scale-[1.02] hover:-translate-y-1"
                         }
                       `}
