@@ -15,7 +15,39 @@ export interface Task {
     enhancedDescription?: string;
     confidence?: number;
   };
+  // Smart Scheduler fields
+  scheduling?: {
+    deadline?: string;
+    estimatedDuration?: number; // in minutes
+    energyLevel?: EnergyLevel;
+    dependencies?: string[]; // task IDs this depends on
+    scheduledFor?: string; // when AI schedules this task
+    gitIntegration?: {
+      repositoryUrl?: string;
+      branch?: string;
+      commitPattern?: string; // regex pattern to match commits
+      autoComplete?: boolean;
+    };
+    developerContext?: {
+      taskType?: DeveloperTaskType;
+      techStack?: string[];
+      complexity?: ComplexityLevel;
+      focusTime?: boolean; // requires deep focus
+    };
+  };
 }
+
+export type EnergyLevel = "low" | "medium" | "high";
+export type DeveloperTaskType =
+  | "coding"
+  | "debugging"
+  | "research"
+  | "documentation"
+  | "testing"
+  | "review"
+  | "meeting"
+  | "planning";
+export type ComplexityLevel = "simple" | "moderate" | "complex";
 
 export type TaskStatus = "todo" | "in-progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
@@ -31,6 +63,37 @@ export interface UpdateTaskInput {
   description?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
+  scheduling?: Partial<Task["scheduling"]>;
+}
+
+// Smart Scheduler types
+export interface ScheduleSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  taskId: string;
+  energyRequired: EnergyLevel;
+  isFlexible: boolean;
+}
+
+export interface DeveloperProfile {
+  userId: string;
+  workingHours: {
+    start: string; // "09:00"
+    end: string; // "17:00"
+  };
+  energyPattern: {
+    morning: EnergyLevel;
+    afternoon: EnergyLevel;
+    evening: EnergyLevel;
+  };
+  preferredTaskTypes: DeveloperTaskType[];
+  techStack: string[];
+  focusBlocks: {
+    duration: number; // minutes
+    breakBetween: number; // minutes
+  };
+  gitRepositories: string[];
 }
 
 // Optimistic update types

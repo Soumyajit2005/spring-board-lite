@@ -2,7 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, LogOut, Moon, Sun, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Search,
+  LogOut,
+  Moon,
+  Sun,
+  BarChart3,
+  TestTube,
+  RefreshCw,
+  Network,
+  Settings,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Lightbulb,
+  Eye,
+  Calendar,
+  TrendingUp,
+} from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -12,13 +29,27 @@ import {
   CreateTaskModal,
   Toast,
   UndoOverlay,
-  AIInsightsPanel,
-  ViewTaskModal,
-  EditTaskModal,
+  SmartSchedulerPanel,
+  ProductivityDashboard,
+  SmartCodeReviewPanel,
+  TestingDashboard,
+  RefactoringDashboard,
+  TaskDependencyVisualizer,
+  CodeInsightsPanel,
 } from "@/components";
 import { AISettingsPanel } from "@/components/AISettings";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import { filterTasks } from "@/lib/utils";
+
+type PanelType =
+  | "scheduler"
+  | "productivity"
+  | "review"
+  | "testing"
+  | "refactor"
+  | "dependencies"
+  | "insights"
+  | "settings";
 
 export default function BoardPage() {
   const router = useRouter();
@@ -34,15 +65,10 @@ export default function BoardPage() {
     undoLastAction,
     canUndo,
   } = useTasks();
-  const {
-    insights,
-    analyzeProductivity,
-    dismissInsight,
-    regenerateInsights,
-    isProcessing,
-    isAIAvailable,
-  } = useAI();
+  const { insights, analyzeProductivity, isProcessing, isAIAvailable } =
+    useAI();
 
+  // UI State
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">(
     "all"
@@ -58,15 +84,9 @@ export default function BoardPage() {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
 
-  // Modal states
-  const [viewTaskModal, setViewTaskModal] = useState<{
-    isOpen: boolean;
-    task: Task | null;
-  }>({ isOpen: false, task: null });
-  const [editTaskModal, setEditTaskModal] = useState<{
-    isOpen: boolean;
-    task: Task | null;
-  }>({ isOpen: false, task: null });
+  // Sidebar and panel states
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activePanel, setActivePanel] = useState<PanelType>("scheduler");
 
   // Auth guard
   useEffect(() => {
@@ -75,24 +95,22 @@ export default function BoardPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // AI Productivity Analysis - Run when tasks change
+  // AI Productivity Analysis
   useEffect(() => {
     if (tasks.length > 0 && isAIAvailable) {
-      // Debounce the analysis to avoid too many API calls
       const timeoutId = setTimeout(() => {
         analyzeProductivity(tasks);
       }, 2000);
-
       return () => clearTimeout(timeoutId);
     }
-    return () => {}; // Always return a cleanup function
+    // No cleanup needed when conditions aren't met
+    return undefined;
   }, [tasks, isAIAvailable, analyzeProductivity]);
 
-  // Keyboard navigation with enhanced drag and drop support
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!focusedTaskId) return;
-
       const task = tasks.find((t) => t.id === focusedTaskId);
       if (!task) return;
 
@@ -103,8 +121,6 @@ export default function BoardPage() {
         e.preventDefault();
         const newStatus = statusOrder[currentIndex - 1];
         moveTask(focusedTaskId, newStatus);
-
-        // Show undo overlay
         const statusDisplayName = newStatus.replace("-", " ");
         const message = `Task "${task.title}" moved to ${statusDisplayName}`;
         setUndoMessage(message);
@@ -113,15 +129,12 @@ export default function BoardPage() {
         e.preventDefault();
         const newStatus = statusOrder[currentIndex + 1];
         moveTask(focusedTaskId, newStatus);
-
-        // Show undo overlay
         const statusDisplayName = newStatus.replace("-", " ");
         const message = `Task "${task.title}" moved to ${statusDisplayName}`;
         setUndoMessage(message);
         setShowUndoOverlay(true);
       }
 
-      // ESC to cancel any ongoing drag operation
       if (e.key === "Escape" && draggedTask) {
         setDraggedTask(null);
         setDropTarget(null);
@@ -135,247 +148,234 @@ export default function BoardPage() {
   // Filter tasks
   const filteredTasks = filterTasks(tasks, {
     searchQuery,
-    priority: priorityFilter,
+    priority: priorityFilter === "all" ? undefined : priorityFilter,
   });
 
-  // Calculate stats manually
-  const stats = {
-    total: filteredTasks.length,
-    todo: filteredTasks.filter((t) => t.status === "todo").length,
-    inProgress: filteredTasks.filter((t) => t.status === "in-progress").length,
-    done: filteredTasks.filter((t) => t.status === "done").length,
-    completionRate:
-      filteredTasks.length > 0
-        ? Math.round(
-            (filteredTasks.filter((t) => t.status === "done").length /
-              filteredTasks.length) *
-              100
-          )
-        : 0,
-  };
-
-  const columns = [
-    {
-      id: "todo" as const,
-      title: "📝 Todo",
-      description: "Tasks to be started",
-      tasks: filteredTasks.filter((t) => t.status === "todo"),
-      color: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700",
-      borderColor: "border-gray-200 dark:border-gray-600",
-      textColor: "text-gray-700 dark:text-gray-300",
-    },
-    {
-      id: "in-progress" as const,
-      title: "🚀 In Progress",
-      description: "Work in progress",
-      tasks: filteredTasks.filter((t) => t.status === "in-progress"),
-      color:
-        "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30",
-      borderColor: "border-blue-200 dark:border-blue-700",
-      textColor: "text-blue-700 dark:text-blue-300",
-    },
-    {
-      id: "done" as const,
-      title: "✅ Done",
-      description: "Completed tasks",
-      tasks: filteredTasks.filter((t) => t.status === "done"),
-      color:
-        "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30",
-      borderColor: "border-green-200 dark:border-green-700",
-      textColor: "text-green-700 dark:text-green-300",
-    },
-  ];
-
-  // Drag handlers with enhanced functionality
-  const handleDragStart = (e: React.DragEvent, task: Task) => {
-    setDraggedTask(task);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", task.id);
-
-    // Create a custom drag image
-    const dragElement = e.currentTarget as HTMLElement;
-    const rect = dragElement.getBoundingClientRect();
-    e.dataTransfer.setDragImage(dragElement, rect.width / 2, rect.height / 2);
-
-    // Add visual feedback class
-    setTimeout(() => {
-      dragElement.classList.add("dragging");
-    }, 0);
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    const dragElement = e.currentTarget as HTMLElement;
-    dragElement.classList.remove("dragging");
-    setDraggedTask(null);
-    setDropTarget(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDragEnter = (e: React.DragEvent, status: TaskStatus) => {
-    e.preventDefault();
-    if (draggedTask && draggedTask.status !== status) {
-      setDropTarget(status);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-
-    // Only clear drop target if we're actually leaving the column
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setDropTarget(null);
-    }
-  };
-
-  const handleDrop = async (e: React.DragEvent, status: TaskStatus) => {
-    e.preventDefault();
-    setDropTarget(null);
-
-    if (draggedTask && draggedTask.status !== status) {
-      try {
-        await moveTask(draggedTask.id, status);
-
-        // Show the undo overlay at center instead of toast
-        const statusDisplayName = status.replace("-", " ");
-        const message = `Task "${draggedTask.title}" moved to ${statusDisplayName}`;
-        setUndoMessage(message);
-        setShowUndoOverlay(true);
-      } catch (error) {
-        setToast({
-          message: "Failed to move task",
-          type: "error",
-        });
-      }
-    }
-    setDraggedTask(null);
-  };
-
-  const handleCreateTask = async (input: any) => {
+  // Task handlers
+  const handleTaskCreate = async (taskData: any) => {
     try {
-      await createTask(input);
+      await createTask(taskData);
+      setIsCreateModalOpen(false);
       setToast({ message: "Task created successfully", type: "success" });
     } catch (error) {
       setToast({ message: "Failed to create task", type: "error" });
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
     try {
-      const task = tasks.find((t) => t.id === taskId);
-      await deleteTask(taskId);
-      setToast({
-        message: `Task "${task?.title}" deleted successfully`,
-        type: "success",
-      });
-    } catch (error) {
-      setToast({ message: "Failed to delete task", type: "error" });
-    }
-  };
-
-  // Modal handlers
-  const handleViewTask = (task: Task) => {
-    setViewTaskModal({ isOpen: true, task });
-  };
-
-  const handleEditTask = (task: Task) => {
-    setEditTaskModal({ isOpen: true, task });
-  };
-
-  const handleCloseViewModal = () => {
-    setViewTaskModal({ isOpen: false, task: null });
-  };
-
-  const handleCloseEditModal = () => {
-    setEditTaskModal({ isOpen: false, task: null });
-  };
-
-  const handleSaveEditTask = async (updatedFields: Partial<Task>) => {
-    if (!editTaskModal.task) return;
-
-    try {
-      await updateTask(editTaskModal.task.id, updatedFields);
-      setToast({
-        message: "Task updated successfully",
-        type: "success",
-      });
-      setEditTaskModal({ isOpen: false, task: null });
+      await updateTask(taskId, updates);
+      setToast({ message: "Task updated successfully", type: "success" });
     } catch (error) {
       setToast({ message: "Failed to update task", type: "error" });
     }
   };
 
-  if (loading) {
+  const handleTaskDelete = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    try {
+      await deleteTask(taskId);
+      setUndoMessage(`Task "${task.title}" deleted`);
+      setShowUndoOverlay(true);
+    } catch (error) {
+      setToast({ message: "Failed to delete task", type: "error" });
+    }
+  };
+
+  const handleUndo = () => {
+    if (canUndo) {
+      undoLastAction();
+      setShowUndoOverlay(false);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (task: Task) => {
+    setDraggedTask(task);
+  };
+
+  const handleDragOver = (e: React.DragEvent, status: TaskStatus) => {
+    e.preventDefault();
+    setDropTarget(status);
+  };
+
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, status: TaskStatus) => {
+    e.preventDefault();
+    if (draggedTask && draggedTask.status !== status) {
+      moveTask(draggedTask.id, status);
+      const statusDisplayName = status.replace("-", " ");
+      setUndoMessage(
+        `Task "${draggedTask.title}" moved to ${statusDisplayName}`
+      );
+      setShowUndoOverlay(true);
+    }
+    setDraggedTask(null);
+    setDropTarget(null);
+  };
+
+  const renderPanel = () => {
+    switch (activePanel) {
+      case "scheduler":
+        return (
+          <SmartSchedulerPanel tasks={tasks} onTaskUpdate={handleTaskUpdate} />
+        );
+      case "productivity":
+        return <ProductivityDashboard tasks={tasks} />;
+      case "review":
+        return <SmartCodeReviewPanel tasks={tasks} />;
+      case "testing":
+        return <TestingDashboard tasks={tasks} />;
+      case "refactor":
+        return <RefactoringDashboard tasks={tasks} />;
+      case "dependencies":
+        return <TaskDependencyVisualizer tasks={tasks} />;
+      case "insights":
+        return (
+          <CodeInsightsPanel tasks={tasks} onTaskUpdate={handleTaskUpdate} />
+        );
+      case "settings":
+        return <AISettingsPanel />;
+      default:
+        return (
+          <SmartSchedulerPanel tasks={tasks} onTaskUpdate={handleTaskUpdate} />
+        );
+    }
+  };
+
+  const panelOptions: Array<{
+    key: PanelType;
+    label: string;
+    icon: any;
+    color: string;
+  }> = [
+    {
+      key: "scheduler",
+      label: "Smart Scheduler",
+      icon: Calendar,
+      color: "text-blue-600",
+    },
+    {
+      key: "productivity",
+      label: "Analytics",
+      icon: BarChart3,
+      color: "text-green-600",
+    },
+    {
+      key: "review",
+      label: "Code Review",
+      icon: Eye,
+      color: "text-purple-600",
+    },
+    { key: "testing", label: "Testing", icon: TestTube, color: "text-red-600" },
+    {
+      key: "refactor",
+      label: "Refactoring",
+      icon: RefreshCw,
+      color: "text-indigo-600",
+    },
+    {
+      key: "dependencies",
+      label: "Dependencies",
+      icon: Network,
+      color: "text-emerald-600",
+    },
+    {
+      key: "insights",
+      label: "Code Insights",
+      icon: Lightbulb,
+      color: "text-yellow-600",
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      icon: Settings,
+      color: "text-gray-600",
+    },
+  ];
+
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-4">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading your tasks...
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  // Show loading screen while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Sprint Board
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <PanelLeftClose className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Sprint Board Lite
               </h1>
-              {user && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <span>👤</span>
-                  <span>
-                    Welcome,{" "}
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {user.fullName}
-                    </span>
-                  </span>
-                </div>
-              )}
+              <span className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-medium rounded-full">
+                AI-Powered
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Quick Stats - Simplified without missing functions */}
-              <div className="hidden md:flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300">
-                  <span>
-                    {tasks.filter((t) => t.status === "done").length} Complete
-                  </span>
-                </div>
+
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                />
               </div>
 
-              {/* AI Settings Button */}
-              {isAIAvailable && <AISettingsPanel />}
+              {/* Priority Filter */}
+              <select
+                value={priorityFilter}
+                onChange={(e) =>
+                  setPriorityFilter(e.target.value as TaskPriority | "all")
+                }
+                className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
 
+              {/* Create Task Button */}
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Task</span>
+              </button>
+
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                aria-label="Toggle theme"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 {isDark ? (
                   <Sun className="w-5 h-5 text-yellow-500" />
@@ -383,328 +383,292 @@ export default function BoardPage() {
                   <Moon className="w-5 h-5 text-gray-600" />
                 )}
               </button>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+
+              {/* User Menu */}
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {user?.email}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Developer
+                  </div>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Controls */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
-            />
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value as any)}
-                className="px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all appearance-none cursor-pointer"
-              >
-                <option value="all">All Priorities</option>
-                <option value="low">Low Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="high">High Priority</option>
-              </select>
-            </div>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl font-medium shadow-lg shadow-blue-200 dark:shadow-blue-900/30 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Task</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Tasks
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.total}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📋</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  In Progress
-                </p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {stats.inProgress}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <span className="text-xl">🚀</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Completed
-                </p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {stats.done}
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <span className="text-xl">✅</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Success Rate
-                </p>
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {stats.completionRate}%
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📊</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Drag and Drop Instructions */}
-        {tasks.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded-xl p-5 mb-8 backdrop-blur-sm">
-            <div className="flex items-center gap-4 text-blue-800 dark:text-blue-200">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <span className="text-xl">💡</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-6 text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <strong>Drag</strong> tasks between columns
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                  Use{" "}
-                  <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs border border-blue-200 dark:border-blue-700">
-                    [ ]
-                  </kbd>{" "}
-                  keys to move focused tasks
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                  <strong>Undo</strong> available after moves
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* AI Insights Dropdown */}
-        {isAIAvailable && insights.length > 0 && (
-          <AIInsightsPanel
-            insights={insights}
-            onDismiss={(insightIndex) => dismissInsight(insightIndex)}
-            onRegenerate={async () => {
-              await regenerateInsights(tasks);
-            }}
-            isRegenerating={isProcessing}
-          />
-        )}
-
-        {/* Board */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {columns.map((column) => (
-            <div
-              key={column.id}
-              onDragOver={handleDragOver}
-              onDragEnter={(e) => handleDragEnter(e, column.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, column.id)}
-              className={`
-                relative rounded-2xl p-6 min-h-[500px] transition-all duration-300 backdrop-blur-sm
-                bg-gradient-to-br ${column.color}
-                border-2 ${
-                  dropTarget === column.id
-                    ? `${column.borderColor} border-dashed shadow-xl shadow-blue-200/50 dark:shadow-blue-900/50 scale-105`
-                    : `${column.borderColor} border-solid shadow-lg`
-                }
-                ${
-                  draggedTask && draggedTask.status === column.id
-                    ? "opacity-50 scale-95"
-                    : ""
-                }
-              `}
-            >
-              {/* Column Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className={`text-xl font-bold ${column.textColor} mb-1`}>
-                    {column.title}
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                    {column.description}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${column.textColor} bg-white/60 dark:bg-gray-800/60`}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* AI Sidebar */}
+        <div
+          className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 ${
+            sidebarCollapsed ? "w-16" : "w-80"
+          } flex-shrink-0`}
+        >
+          {/* Panel Navigation */}
+          <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+            {sidebarCollapsed ? (
+              <div className="space-y-2">
+                {panelOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() => setActivePanel(option.key)}
+                      className={`w-full p-2 rounded-lg transition-colors ${
+                        activePanel === option.key
+                          ? "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                      title={option.label}
                     >
-                      {column.tasks.length}{" "}
-                      {column.tasks.length === 1 ? "task" : "tasks"}
-                    </span>
-                    {dropTarget === column.id && draggedTask && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 animate-pulse">
-                        Drop here
-                      </span>
-                    )}
-                  </div>
-                </div>
+                      <Icon className="w-5 h-5 mx-auto" />
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* Tasks */}
-              <div className="space-y-4">
-                {column.tasks.length === 0 ? (
-                  <div
-                    className={`
-                      text-center py-12 rounded-xl transition-all duration-300
-                      ${
-                        dropTarget === column.id
-                          ? "bg-blue-100/60 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-600 border-dashed"
-                          : "bg-white/30 dark:bg-gray-800/30 border-2 border-gray-200/50 dark:border-gray-700/50 border-dashed"
-                      }
-                    `}
-                  >
-                    <div className="mb-4">
-                      {dropTarget === column.id ? (
-                        <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
-                          <span className="text-2xl">📥</span>
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
-                          <AlertCircle className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <p
-                      className={`text-sm font-medium ${
-                        dropTarget === column.id
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-gray-500 dark:text-gray-400"
+            ) : (
+              <div className="space-y-1">
+                <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
+                  AI Assistant Panels
+                </h2>
+                {panelOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() => setActivePanel(option.key)}
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                        activePanel === option.key
+                          ? "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                     >
-                      {dropTarget === column.id
-                        ? "Drop your task here"
-                        : `No ${column.title
-                            .split(" ")[1]
-                            ?.toLowerCase()} tasks yet`}
-                    </p>
-                  </div>
-                ) : (
-                  column.tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, task)}
-                      onDragEnd={handleDragEnd}
-                      className={`
-                        transition-all duration-300 transform
-                        ${
-                          draggedTask?.id === task.id
-                            ? "opacity-50 scale-95 rotate-1 z-30"
-                            : "hover:scale-[1.02] hover:-translate-y-1"
-                        }
-                      `}
-                    >
-                      <TaskCard
-                        task={task}
-                        isDragging={draggedTask?.id === task.id}
-                        onFocus={() => setFocusedTaskId(task.id)}
-                        isFocused={focusedTaskId === task.id}
-                        onDelete={handleDeleteTask}
-                        onView={handleViewTask}
-                        onEdit={handleEditTask}
-                      />
+                      <Icon className={`w-4 h-4 ${option.color}`} />
+                      <span className="text-sm font-medium">
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Panel Content */}
+          {!sidebarCollapsed && (
+            <div className="p-4 h-full overflow-y-auto">{renderPanel()}</div>
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden">
+          {/* AI Insights Bar */}
+          {insights.length > 0 && isAIAvailable && (
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="w-5 h-5" />
+                  <div>
+                    <div className="font-medium">AI Productivity Insights</div>
+                    <div className="text-sm opacity-90">
+                      {insights[0]?.message ||
+                        "Analyzing your productivity patterns..."}
                     </div>
-                  ))
+                  </div>
+                </div>
+                {isProcessing && (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span className="text-sm">Processing...</span>
+                  </div>
                 )}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Task Board */}
+          <div className="p-6 h-full overflow-y-auto">
+            <div className="grid grid-cols-3 gap-6 h-full">
+              {/* Todo Column */}
+              <div
+                className={`bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg ${
+                  dropTarget === "todo"
+                    ? "ring-2 ring-blue-500 bg-blue-50/80 dark:bg-blue-900/20"
+                    : ""
+                }`}
+                onDragOver={(e) => handleDragOver(e, "todo")}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, "todo")}
+              >
+                <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      To Do
+                    </h3>
+                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full text-sm">
+                      {filteredTasks.filter((t) => t.status === "todo").length}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3 h-[calc(100%-80px)] overflow-y-auto">
+                  {filteredTasks
+                    .filter((task) => task.status === "todo")
+                    .map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onDelete={handleTaskDelete}
+                        onFocus={() => setFocusedTaskId(task.id)}
+                        isFocused={focusedTaskId === task.id}
+                        isDragging={draggedTask?.id === task.id}
+                        onDragStart={() => handleDragStart(task)}
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* In Progress Column */}
+              <div
+                className={`bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg ${
+                  dropTarget === "in-progress"
+                    ? "ring-2 ring-yellow-500 bg-yellow-50/80 dark:bg-yellow-900/20"
+                    : ""
+                }`}
+                onDragOver={(e) => handleDragOver(e, "in-progress")}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, "in-progress")}
+              >
+                <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      In Progress
+                    </h3>
+                    <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-2 py-1 rounded-full text-sm">
+                      {
+                        filteredTasks.filter((t) => t.status === "in-progress")
+                          .length
+                      }
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3 h-[calc(100%-80px)] overflow-y-auto">
+                  {filteredTasks
+                    .filter((task) => task.status === "in-progress")
+                    .map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onDelete={handleTaskDelete}
+                        onFocus={() => setFocusedTaskId(task.id)}
+                        isFocused={focusedTaskId === task.id}
+                        isDragging={draggedTask?.id === task.id}
+                        onDragStart={() => handleDragStart(task)}
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* Done Column */}
+              <div
+                className={`bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg ${
+                  dropTarget === "done"
+                    ? "ring-2 ring-green-500 bg-green-50/80 dark:bg-green-900/20"
+                    : ""
+                }`}
+                onDragOver={(e) => handleDragOver(e, "done")}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, "done")}
+              >
+                <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      Done
+                    </h3>
+                    <span className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-sm">
+                      {filteredTasks.filter((t) => t.status === "done").length}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3 h-[calc(100%-80px)] overflow-y-auto">
+                  {filteredTasks
+                    .filter((task) => task.status === "done")
+                    .map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onDelete={handleTaskDelete}
+                        onFocus={() => setFocusedTaskId(task.id)}
+                        isFocused={focusedTaskId === task.id}
+                        isDragging={draggedTask?.id === task.id}
+                        onDragStart={() => handleDragStart(task)}
+                      />
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Empty State */}
+            {filteredTasks.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <Plus className="w-12 h-12 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  {searchQuery || priorityFilter !== "all"
+                    ? "No tasks match your filters"
+                    : "Ready to boost your productivity?"}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {searchQuery || priorityFilter !== "all"
+                    ? "Try adjusting your search or filters to find more tasks."
+                    : "Create your first task and let our AI-powered features help you stay organized and efficient."}
+                </p>
+                {!searchQuery && priorityFilter === "all" && (
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Create Your First Task
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <CreateTaskModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreate={handleCreateTask}
-      />
-
-      {/* Undo Overlay - Centered modal for undo actions */}
-      {showUndoOverlay && canUndo && (
-        <UndoOverlay
-          message={undoMessage}
-          onUndo={() => {
-            undoLastAction();
-            setShowUndoOverlay(false);
-            setToast({
-              message: "Task move undone",
-              type: "success",
-            });
-          }}
-          onClose={() => setShowUndoOverlay(false)}
-          duration={5000}
+      {/* Modals and Overlays */}
+      {isCreateModalOpen && (
+        <CreateTaskModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={handleTaskCreate}
         />
       )}
 
-      {/* Regular toast for other notifications */}
-      {toast && toast.type !== "undo" && (
+      {showUndoOverlay && (
+        <UndoOverlay
+          message={undoMessage}
+          onUndo={handleUndo}
+          onClose={() => setShowUndoOverlay(false)}
+        />
+      )}
+
+      {toast && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
-        />
-      )}
-
-      {/* View Task Modal */}
-      {viewTaskModal.task && (
-        <ViewTaskModal
-          task={viewTaskModal.task}
-          isOpen={viewTaskModal.isOpen}
-          onClose={handleCloseViewModal}
-        />
-      )}
-
-      {/* Edit Task Modal */}
-      {editTaskModal.task && (
-        <EditTaskModal
-          task={editTaskModal.task}
-          isOpen={editTaskModal.isOpen}
-          onClose={handleCloseEditModal}
-          onSave={handleSaveEditTask}
         />
       )}
     </div>

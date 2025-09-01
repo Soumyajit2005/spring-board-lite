@@ -164,9 +164,18 @@
       "description": "lolll",
       "priority": "low",
       "userId": "1756409076955",
-      "status": "done",
+      "status": "in-progress",
       "createdAt": "2025-08-28T20:56:50.870Z",
-      "updatedAt": "2025-09-01T04:42:15.870Z"
+      "updatedAt": "2025-09-01T05:45:33.554Z",
+      "scheduling": {
+        "estimatedDuration": 120,
+        "scheduledFor": "2025-09-01T06:43:42.838Z",
+        "developerContext": {
+          "taskType": "coding",
+          "techStack": [],
+          "complexity": "moderate"
+        }
+      }
     },
     {
       "id": "2df9",

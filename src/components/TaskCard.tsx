@@ -21,6 +21,7 @@ interface TaskCardProps {
   onDelete?: (taskId: string) => void;
   onView?: (task: Task) => void;
   onEdit?: (task: Task) => void;
+  onDragStart?: () => void;
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
@@ -35,6 +36,7 @@ export function TaskCard({
   onDelete,
   onView,
   onEdit,
+  onDragStart,
   onTouchStart,
   onTouchMove,
   onTouchEnd,
@@ -68,6 +70,15 @@ export function TaskCard({
   return (
     <div
       tabIndex={0}
+      draggable={true}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", task.id);
+        onDragStart?.();
+      }}
+      onDragEnd={() => {
+        // Reset any visual states after drag ends
+      }}
       onClick={onFocus}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
